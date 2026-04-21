@@ -4,64 +4,55 @@
  */
 package infraestructura.ui;
 
-import infraestructura.ui.VistaDashboard;
-import infraestructura.ui.VistaEstadistica;
-import javax.swing.JPanel;
+import aplicacion.ContenedorService;
+import aplicacion.UsuarioService;
+import dominio.Usuario;
 import java.awt.BorderLayout;
+import javax.swing.JPanel;
 /**
  *
  * @author Raul
  */
-public class Main extends javax.swing.JFrame {
-    
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Main.class.getName());
+public class MenuPrincipal extends javax.swing.JFrame {
     
     private int nivelPermisoUsuarioActual;
     private String nombreUsuarioActual;
     private boolean sesionTrabajadorActiva = false;
+    private ContenedorService contenedorService;
+    private UsuarioService usuarioService;
+    private Usuario usuarioActualObj;
     /**
      * Creates new form Main
      */
-    public Main() {
-        initComponents();
-        this.setLocationRelativeTo(null); 
+    public MenuPrincipal(int nivelPermiso, String nombreUsuario, Usuario u, ContenedorService cService, UsuarioService uService) {
+        this.contenedorService = cService;
+        this.usuarioService = uService;
+        this.usuarioActualObj = u;
         
-        // Sesión de invitado por defecto
-        this.nivelPermisoUsuarioActual = 1; 
-        this.nombreUsuarioActual = "Invitado";
-        
-        configurarBotones();
-        MostrarDashboard();
-    }
-    
-    public Main(int nivelPermiso, String nombreUsuario) {
         initComponents();
         this.setLocationRelativeTo(null); 
         
         this.nivelPermisoUsuarioActual = nivelPermiso;
         this.nombreUsuarioActual = nombreUsuario;
         
-        // Si el nivel es 2 (definido en nuestro repo), es un trabajador
-        if (nivelPermiso == 2) {
-            this.sesionTrabajadorActiva = true;
+        if (nivelPermiso == 2) { 
+            this.sesionTrabajadorActiva = true; 
         }
-
+        
         configurarBotones();
         MostrarDashboard();
-        
-        // Opcional: Cambiar el título de la ventana según el usuario
         this.setTitle("Sistema Tacna Limpia - Usuario: " + nombreUsuarioActual);
     }
     
     private void configurarBotones() {
-        btnCambiarEstado.addActionListener(evt -> AbrirFormularioHijo(new VistaDashboard()));
-        btnEstadistica.addActionListener(evt -> AbrirFormularioHijo(new VistaEstadistica()));
+        btnCambiarEstado.addActionListener(evt -> AbrirFormularioHijo(new VistaDashboard(contenedorService)));
+        btnEstadistica.addActionListener(evt -> AbrirFormularioHijo(new VistaEstadistica(contenedorService)));
         btnAgregarTrabajador.addActionListener(evt -> MostrarRegistroTrabajador());
         btnRutaTrabajador.addActionListener(evt -> {
-            if (sesionTrabajadorActiva || nivelPermisoUsuarioActual == 0) {
-                AbrirFormularioHijo(new VistaTrabajador());
-            } else {
-                pedirLoginTrabajador();
+            if (sesionTrabajadorActiva || nivelPermisoUsuarioActual == 0) { 
+                AbrirFormularioHijo(new VistaTrabajador(contenedorService)); 
+            } else { 
+                pedirLoginTrabajador(); 
             }
         });
     }
@@ -73,32 +64,27 @@ public class Main extends javax.swing.JFrame {
             panelContenedor.add(panelHijo, BorderLayout.CENTER);
             panelContenedor.revalidate();
             panelContenedor.repaint();
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Error al cargar el panel: " + e.getMessage());
+        } catch (Exception e) { 
+            javax.swing.JOptionPane.showMessageDialog(this, "Error al cargar el panel: " + e.getMessage()); 
         }
     }
     
     private void MostrarDashboard() {
-        AbrirFormularioHijo(new VistaDashboard());
+        AbrirFormularioHijo(new VistaDashboard(contenedorService));
     }
     
     private void MostrarRegistroTrabajador() {
-        if (nivelPermisoUsuarioActual == 0) { // 0 = Administrador en la BD
-            AbrirFormularioHijo(new VistaAgregarTrabajador());
-        } else {
-            javax.swing.JOptionPane.showMessageDialog(this, 
-                "Acceso Denegado: Se requieren permisos de Administrador.", 
-                "Seguridad", javax.swing.JOptionPane.ERROR_MESSAGE);
+        if (nivelPermisoUsuarioActual == 0) { 
+            AbrirFormularioHijo(new VistaAgregarTrabajador(usuarioService)); 
+        } else { 
+            javax.swing.JOptionPane.showMessageDialog(this, "Acceso Denegado: Se requieren permisos de Administrador.", "Seguridad", javax.swing.JOptionPane.ERROR_MESSAGE); 
         }
     }
     
     private void pedirLoginTrabajador() {
-        int respuesta = javax.swing.JOptionPane.showConfirmDialog(this, 
-            "Para acceder a rutas debe validar su cuenta de Trabajador.\n¿Desea ir al Login?", 
-            "Validación Requerida", javax.swing.JOptionPane.YES_NO_OPTION);
-            
+        int respuesta = javax.swing.JOptionPane.showConfirmDialog(this, "Para acceder a rutas debe validar su cuenta de Trabajador.\n¿Desea ir al Login?", "Validación Requerida", javax.swing.JOptionPane.YES_NO_OPTION);
         if (respuesta == javax.swing.JOptionPane.YES_OPTION) {
-            Login login = new Login();
+            Login login = new Login(usuarioService, contenedorService);
             login.esModoTrabajador = true;
             login.setVisible(true);
             this.dispose();
@@ -218,30 +204,6 @@ public class Main extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Main().setVisible(true));
-    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAgregarTrabajador;

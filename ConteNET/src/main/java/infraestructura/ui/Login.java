@@ -4,20 +4,37 @@
  */
 package infraestructura.ui;
 
-import aplicacion.UsuarioService;
 import aplicacion.ContenedorService;
+import aplicacion.UsuarioService;
 import dominio.Usuario;
+import infraestructura.persistencia.BasureroWebSocket;
+import infraestructura.persistencia.MySQLContenedorRepository;
+import infraestructura.persistencia.MySQLLecturaRepository;
+import infraestructura.persistencia.MySQLUsuarioRepository;
+
 
 public class Login extends javax.swing.JFrame {
     
     private final UsuarioService usuarioService;
     private final ContenedorService contenedorService;
-
+    public int nivelPermiso = -1; 
+    public String usuarioActual = "";
+    public boolean esModoTrabajador = false;
+    int xMouse, yMouse;
+    
     public Login(UsuarioService uService, ContenedorService cService) {
         this.usuarioService = uService;
         this.contenedorService = cService;
         initComponents();
         this.setLocationRelativeTo(null);
+        this.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent evt) { xMouse = evt.getX(); yMouse = evt.getY(); }
+        });
+        this.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(java.awt.event.MouseEvent evt) { setLocation(evt.getXOnScreen() - xMouse, evt.getYOnScreen() - yMouse); }
+        });
     }
 
     /**
@@ -139,46 +156,25 @@ public class Login extends javax.swing.JFrame {
     private void btnIngresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnIngresarActionPerformed
         String usuarioLimpio = txtUsuario.getText().trim();
         String passLimpio = txtContraseña.getText().trim();
-
         if (usuarioLimpio.isEmpty() || passLimpio.isEmpty()) {
             javax.swing.JOptionPane.showMessageDialog(this, "Complete todos los campos.", "Aviso", javax.swing.JOptionPane.WARNING_MESSAGE);
             return;
         }
-
-        if (esModoTrabajador) {
-            // LOGIN DE TRABAJADOR
-            String nombreCompleto = repo.validarLoginTrabajador(usuarioLimpio, passLimpio);
-
-            if (nombreCompleto != null) {
-                this.usuarioActual = nombreCompleto;
-                this.nivelPermiso = 2; // Nivel interno para trabajador
-                
-                Main ventanaPrincipal = new Main(this.nivelPermiso, this.usuarioActual);
-                ventanaPrincipal.setVisible(true);
-                this.dispose();
-            } else {
-                javax.swing.JOptionPane.showMessageDialog(this, "Credenciales de trabajador incorrectas o cuenta inactiva.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-            }
+        Usuario u = usuarioService.login(usuarioLimpio, passLimpio);
+        if (u != null) {
+            this.usuarioActual = u.getUsuario();
+            this.nivelPermiso = u.getRol().name().equals("ADMINISTRADOR") ? 0 : 2;
+            MenuPrincipal ventanaPrincipal = new MenuPrincipal(this.nivelPermiso, this.usuarioActual, u, contenedorService, usuarioService);
+            ventanaPrincipal.setVisible(true);
+            this.dispose();
         } else {
-            // LOGIN DE ADMINISTRADOR
-            int permiso = repo.validarLoginAdmin(usuarioLimpio, passLimpio);
-
-            if (permiso != -1) {
-                this.nivelPermiso = permiso;
-                this.usuarioActual = usuarioLimpio;
-                
-                // Pasamos los datos REALES al constructor del Main
-                Main ventanaPrincipal = new Main(this.nivelPermiso, this.usuarioActual);
-                ventanaPrincipal.setVisible(true);
-                this.dispose();
-            } else {
-                javax.swing.JOptionPane.showMessageDialog(this, "Usuario o contraseña de administrador incorrectos.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
-            }
+            javax.swing.JOptionPane.showMessageDialog(this, "Credenciales incorrectas.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_btnIngresarActionPerformed
 
     private void btnCerrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCerrarActionPerformed
         // TODO add your handling code here:
+        
         System.exit(0); // Cierra la aplicación
     }//GEN-LAST:event_btnCerrarActionPerformed
 
@@ -219,7 +215,13 @@ public class Login extends javax.swing.JFrame {
         //</editor-fold>
         
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Login().setVisible(true));
+        MySQLContenedorRepository cr = new MySQLContenedorRepository();
+        MySQLLecturaRepository lr = new MySQLLecturaRepository();
+        MySQLUsuarioRepository ur = new MySQLUsuarioRepository();
+        ContenedorService cs = new ContenedorService(cr, lr);
+        UsuarioService us = new UsuarioService(ur);
+        new BasureroWebSocket(8080, cs).start();
+        java.awt.EventQueue.invokeLater(() -> new Login(us, cs).setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
