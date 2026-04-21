@@ -15,12 +15,12 @@ import javax.swing.JPanel;
  */
 public class MenuPrincipal extends javax.swing.JFrame {
     
-    private int nivelPermisoUsuarioActual;
-    private String nombreUsuarioActual;
-    private boolean sesionTrabajadorActiva = false;
-    private ContenedorService contenedorService;
-    private UsuarioService usuarioService;
-    private Usuario usuarioActualObj;
+    private final int nivelPermisoUsuarioActual;
+    private final String nombreUsuarioActual;
+    private final boolean sesionTrabajadorActiva;
+    private final ContenedorService contenedorService;
+    private final UsuarioService usuarioService;
+    private final Usuario usuarioActualObj;
     /**
      * Creates new form Main
      */
@@ -28,16 +28,12 @@ public class MenuPrincipal extends javax.swing.JFrame {
         this.contenedorService = cService;
         this.usuarioService = uService;
         this.usuarioActualObj = u;
+        this.nivelPermisoUsuarioActual = nivelPermiso;
+        this.nombreUsuarioActual = nombreUsuario;
+        this.sesionTrabajadorActiva = (nivelPermiso == 2);
         
         initComponents();
         this.setLocationRelativeTo(null); 
-        
-        this.nivelPermisoUsuarioActual = nivelPermiso;
-        this.nombreUsuarioActual = nombreUsuario;
-        
-        if (nivelPermiso == 2) { 
-            this.sesionTrabajadorActiva = true; 
-        }
         
         configurarBotones();
         MostrarDashboard();
@@ -56,6 +52,7 @@ public class MenuPrincipal extends javax.swing.JFrame {
             }
         });
     }
+    
     
     private void AbrirFormularioHijo(JPanel panelHijo) {
         try {
@@ -122,12 +119,16 @@ public class MenuPrincipal extends javax.swing.JFrame {
         jLabel2.setMinimumSize(new java.awt.Dimension(684, 365));
 
         btnCambiarEstado.setText("HOME");
+        btnCambiarEstado.addActionListener(this::btnCambiarEstadoActionPerformed);
 
         btnRutaTrabajador.setText("Rutas");
+        btnRutaTrabajador.addActionListener(this::btnRutaTrabajadorActionPerformed);
 
         btnEstadistica.setText("Estadisticas");
+        btnEstadistica.addActionListener(this::btnEstadisticaActionPerformed);
 
         btnAgregarTrabajador.setText("AGREGAR TRABAJADOR");
+        btnAgregarTrabajador.addActionListener(this::btnAgregarTrabajadorActionPerformed);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -203,6 +204,25 @@ public class MenuPrincipal extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btnCambiarEstadoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCambiarEstadoActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnCambiarEstadoActionPerformed
+
+    private void btnRutaTrabajadorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRutaTrabajadorActionPerformed
+        // TODO add your handling code here:
+        
+    }//GEN-LAST:event_btnRutaTrabajadorActionPerformed
+
+    private void btnEstadisticaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEstadisticaActionPerformed
+        // TODO add your handling code here:
+        
+    }//GEN-LAST:event_btnEstadisticaActionPerformed
+
+    private void btnAgregarTrabajadorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarTrabajadorActionPerformed
+        // TODO add your handling code here:
+
+    }//GEN-LAST:event_btnAgregarTrabajadorActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

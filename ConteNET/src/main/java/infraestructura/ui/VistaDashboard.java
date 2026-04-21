@@ -4,9 +4,10 @@
  */
 package infraestructura.ui;
 
+import aplicacion.ContenedorService;
+import dominio.Contenedor;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.List;
 import javax.swing.Timer;
 import javax.swing.table.DefaultTableModel;
@@ -21,113 +22,90 @@ public class VistaDashboard extends javax.swing.JPanel {
     
     private Timer timerRefresco;
     public Runnable onAbrirRegistroSolicitado; 
+    private final ContenedorService service;
     
-    // Lista simulada de contenedores
-    private List<String[]> listaContenedores = new ArrayList<>();
-    
-    public VistaDashboard() {
+    public VistaDashboard(ContenedorService service) {
+        this.service = service;
         initComponents();
         ConfigurarControlesInicial();
         CargarDatosDashboard();
         
-        // Configurar Timer (Refresco cada 5 segundos para la prueba)
-        timerRefresco = new Timer(5000, (java.awt.event.ActionEvent e) -> {
-            // ActualizarDireccionesSiHaceFalta(); 
-            // CargarDatosDashboard();
+        // Timer que refresca los datos cada 5 segundos
+        timerRefresco = new Timer(5000, (java.awt.event.ActionEvent e) -> { 
+            CargarDatosDashboard(); 
         });
         timerRefresco.start();
     }
     
     private void ConfigurarControlesInicial() {
-        // 1. Configurar Gráfico
         panelGrafico.setLayout(new BorderLayout()); 
-        
-        // 2. Configurar Mapa (Por ahora le ponemos un color de fondo para distinguirlo)
         panelGMap.setBackground(new Color(230, 230, 230));
         panelGMap.setLayout(new BorderLayout());
-        javax.swing.JLabel lblMapa = new javax.swing.JLabel("El mapa de C# (GMap.NET) se cargará aquí", javax.swing.SwingConstants.CENTER);
+        
+        javax.swing.JLabel lblMapa = new javax.swing.JLabel("El mapa se cargará aquí", javax.swing.SwingConstants.CENTER);
         panelGMap.add(lblMapa, BorderLayout.CENTER);
         
-        // 3. Configurar Tabla
-        DefaultTableModel modelo = new DefaultTableModel(
-            new Object [][] {},
-            new String [] {"ID", "Nombre", "Estado", "Dirección"}
-        ) {
+        DefaultTableModel modelo = new DefaultTableModel(new Object [][] {}, new String [] {"ID", "Nombre", "Estado", "Dirección"}) {
             boolean[] canEdit = new boolean [] {false, false, false, false};
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
+            @Override
+            public boolean isCellEditable(int rowIndex, int columnIndex) { return canEdit [columnIndex]; }
         };
         tablaContenedores.setModel(modelo);
     }
     
     public void CargarDatosDashboard() {
-        // --- SIMULACIÓN DE DATOS ---
-        listaContenedores.clear();
-        listaContenedores.add(new String[]{"1", "Contenedor Centro", "Lleno", "Calle Principal 123"});
-        listaContenedores.add(new String[]{"2", "Contenedor Norte", "Util", "Av. Norte 456"});
-        listaContenedores.add(new String[]{"3", "Contenedor Sur", "Lleno", "Av. Sur 789"});
-        listaContenedores.add(new String[]{"4", "Contenedor Este", "Mitad", "Calle Este 101"});
-        listaContenedores.add(new String[]{"5", "Contenedor Plaza", "Util", "Plaza de Armas"});
-        // -----------------------------
-
-        // 6. Actualizar Tabla
+        List<Contenedor> lista = service.obtenerTodos();
         DefaultTableModel modelo = (DefaultTableModel) tablaContenedores.getModel();
         modelo.setRowCount(0); 
-        for (String[] fila : listaContenedores) {
-            modelo.addRow(fila);
+        
+        for (Contenedor c : lista) { 
+            modelo.addRow(new Object[]{c.getIdContenedor(), c.getDescripcion(), c.getEstadoOperativo(), c.getDireccion()}); 
         }
-
-        // 7. Actualizar Gráfico
-        ActualizarDatosGrafico();
+        ActualizarDatosGrafico(lista);
     }
     
-    private void ActualizarDatosGrafico() {
-        if (listaContenedores == null || listaContenedores.isEmpty()) return;
-
-        // 1. Agrupar y contar por estado
+    private void ActualizarDatosGrafico(List<Contenedor> lista) {
+        if (lista == null || lista.isEmpty()) return;
         int contLleno = 0, contUtil = 0, contMitad = 0;
-        for (String[] c : listaContenedores) {
-            String estado = c[2]; 
-            if (estado.equalsIgnoreCase("Lleno")) contLleno++;
-            else if (estado.equalsIgnoreCase("Util")) contUtil++;
-            else if (estado.equalsIgnoreCase("Mitad")) contMitad++;
+        
+        for (Contenedor c : lista) {
+            String estado = c.getEstadoOperativo(); 
+            if (estado.equalsIgnoreCase("LLENO")) contLleno++; 
+            else if (estado.equalsIgnoreCase("UTIL")) contUtil++; 
+            else if (estado.equalsIgnoreCase("MITAD")) contMitad++;
         }
-
-        // 2. Crear Dataset para JFreeChart
+        
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        dataset.addValue(contUtil, "Estados", "Util");
-        dataset.addValue(contMitad, "Estados", "Mitad");
+        dataset.addValue(contUtil, "Estados", "Util"); 
+        dataset.addValue(contMitad, "Estados", "Mitad"); 
         dataset.addValue(contLleno, "Estados", "Lleno");
-
-        // 3. Crear Gráfico
-        JFreeChart chart = ChartFactory.createBarChart(
-                "CONTENEDORES POR ESTADO", // Título
-                "", // Eje X
-                "Cantidad", // Eje Y
-                dataset
-        );
-
-        // 4. Personalizar Colores
+        
+        JFreeChart chart = ChartFactory.createBarChart("CONTENEDORES POR ESTADO", "", "Cantidad", dataset);
         CategoryPlot plot = chart.getCategoryPlot();
         
         BarRenderer customRenderer = new BarRenderer() {
             @Override
             public java.awt.Paint getItemPaint(int row, int column) {
                 String categoria = (String) dataset.getColumnKey(column);
-                if (categoria.equals("Lleno")) return new Color(220, 53, 69); // Rojo
-                if (categoria.equals("Util")) return new Color(40, 167, 69); // Verde
-                if (categoria.equals("Mitad")) return new Color(255, 193, 7); // Amarillo
+                if (categoria.equals("Lleno")) return new Color(220, 53, 69); 
+                if (categoria.equals("Util")) return new Color(40, 167, 69); 
+                if (categoria.equals("Mitad")) return new Color(255, 193, 7); 
                 return super.getItemPaint(row, column);
             }
         };
         plot.setRenderer(customRenderer);
-
-        // 5. Mostrar en el Panel
+        
         panelGrafico.removeAll();
-        ChartPanel chartPanel = new ChartPanel(chart);
-        panelGrafico.add(chartPanel, BorderLayout.CENTER);
+        panelGrafico.add(new ChartPanel(chart), BorderLayout.CENTER);
         panelGrafico.validate();
+    }
+    
+    @Override
+    public void removeNotify() {
+        super.removeNotify();
+        if (timerRefresco != null) {
+            timerRefresco.stop();
+        }
     }
 
     

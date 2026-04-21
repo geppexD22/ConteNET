@@ -6,6 +6,7 @@ package infraestructura.ui;
 
 import aplicacion.ContenedorService;
 import aplicacion.UsuarioService;
+import static com.mysql.cj.conf.PropertyKey.logger;
 import dominio.Usuario;
 import infraestructura.persistencia.BasureroWebSocket;
 import infraestructura.persistencia.MySQLContenedorRepository;
@@ -17,24 +18,12 @@ public class Login extends javax.swing.JFrame {
     
     private final UsuarioService usuarioService;
     private final ContenedorService contenedorService;
-    public int nivelPermiso = -1; 
-    public String usuarioActual = "";
-    public boolean esModoTrabajador = false;
-    int xMouse, yMouse;
     
     public Login(UsuarioService uService, ContenedorService cService) {
         this.usuarioService = uService;
         this.contenedorService = cService;
         initComponents();
         this.setLocationRelativeTo(null);
-        this.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent evt) { xMouse = evt.getX(); yMouse = evt.getY(); }
-        });
-        this.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
-            @Override
-            public void mouseDragged(java.awt.event.MouseEvent evt) { setLocation(evt.getXOnScreen() - xMouse, evt.getYOnScreen() - yMouse); }
-        });
     }
 
     /**
@@ -154,21 +143,25 @@ public class Login extends javax.swing.JFrame {
     
         
     private void btnIngresarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnIngresarActionPerformed
-        String usuarioLimpio = txtUsuario.getText().trim();
-        String passLimpio = txtContraseña.getText().trim();
-        if (usuarioLimpio.isEmpty() || passLimpio.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this, "Complete todos los campos.", "Aviso", javax.swing.JOptionPane.WARNING_MESSAGE);
+        String user = txtUsuario.getText().trim();
+        String pass = txtContraseña.getText().trim();
+
+        if (user.isEmpty() || pass.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(this, "Complete todos los campos.");
             return;
         }
-        Usuario u = usuarioService.login(usuarioLimpio, passLimpio);
+
+        Usuario u = usuarioService.login(user, pass);
+
         if (u != null) {
-            this.usuarioActual = u.getUsuario();
-            this.nivelPermiso = u.getRol().name().equals("ADMINISTRADOR") ? 0 : 2;
-            MenuPrincipal ventanaPrincipal = new MenuPrincipal(this.nivelPermiso, this.usuarioActual, u, contenedorService, usuarioService);
-            ventanaPrincipal.setVisible(true);
+
+            int permiso = u.getRol().name().equals("ADMINISTRADOR") ? 0 : 2;
+
+            MenuPrincipal menu = new MenuPrincipal(permiso, u.getUsuario(), u, contenedorService, usuarioService);
+            menu.setVisible(true);
             this.dispose();
         } else {
-            javax.swing.JOptionPane.showMessageDialog(this, "Credenciales incorrectas.", "Error", javax.swing.JOptionPane.ERROR_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog(this, "Credenciales incorrectas.");
         }
     }//GEN-LAST:event_btnIngresarActionPerformed
 
@@ -182,11 +175,7 @@ public class Login extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
+        // 1. Poner el diseño moderno "Nimbus" a la app (Corregido sin 'logger')
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
@@ -194,33 +183,22 @@ public class Login extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            ex.printStackTrace(); // <-- Aquí estaba el error del logger
         }
-        //</editor-fold>
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
+
+        // 2. Levantar la Base de Datos y Servicios
+        infraestructura.persistencia.MySQLContenedorRepository cr = new infraestructura.persistencia.MySQLContenedorRepository();
+        infraestructura.persistencia.MySQLLecturaRepository lr = new infraestructura.persistencia.MySQLLecturaRepository();
+        infraestructura.persistencia.MySQLUsuarioRepository ur = new infraestructura.persistencia.MySQLUsuarioRepository();
         
-        /* Create and display the form */
-        MySQLContenedorRepository cr = new MySQLContenedorRepository();
-        MySQLLecturaRepository lr = new MySQLLecturaRepository();
-        MySQLUsuarioRepository ur = new MySQLUsuarioRepository();
-        ContenedorService cs = new ContenedorService(cr, lr);
-        UsuarioService us = new UsuarioService(ur);
-        new BasureroWebSocket(8080, cs).start();
+        aplicacion.ContenedorService cs = new aplicacion.ContenedorService(cr, lr);
+        aplicacion.UsuarioService us = new aplicacion.UsuarioService(ur);
+
+        // 3. Arrancar el servidor para el ESP32
+        new infraestructura.persistencia.BasureroWebSocket(8080, cs).start();
+
+        // 4. Mostrar la ventana de Login
         java.awt.EventQueue.invokeLater(() -> new Login(us, cs).setVisible(true));
     }
 

@@ -4,6 +4,7 @@
  */
 package infraestructura.ui;
 
+import aplicacion.ContenedorService;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -22,8 +23,8 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.DefaultPieDataset;
 public class VistaEstadistica extends javax.swing.JPanel {
     
-    private Timer timerRefresco;
-    // private LinqService _service; // Futuro servicio de BD
+    private final Timer timerRefresco;
+    private final ContenedorService service;
 
     public VistaEstadistica() {
         initComponents();
