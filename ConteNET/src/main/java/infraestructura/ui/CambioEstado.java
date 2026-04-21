@@ -4,14 +4,14 @@
  */
 package infraestructura.ui;
 
-import INFRAESTRUCTURA.ContenedorRepositorio;
+import aplicacion.IContenedorRepository;
 
 public class CambioEstado extends javax.swing.JFrame {
     
    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(CambioEstado.class.getName());
     
     // Adaptador de Infraestructura
-    private ContenedorRepositorio repo = new ContenedorRepositorio();
+    private IContenedorRepository repo = new IContenedorRepository();
     public Runnable onContenedorAgregado;
     
     public CambioEstado() {
