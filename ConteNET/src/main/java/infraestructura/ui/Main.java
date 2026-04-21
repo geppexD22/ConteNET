@@ -2,8 +2,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
-package PRESENTACIÓN;
+package infraestructura.ui;
 
+import infraestructura.ui.VistaDashboard;
+import infraestructura.ui.VistaEstadistica;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 /**
@@ -123,7 +125,6 @@ public class Main extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(153, 153, 153));
-        setPreferredSize(new java.awt.Dimension(910, 478));
 
         jPanel1.setBackground(new java.awt.Color(0, 51, 153));
         jPanel1.setForeground(new java.awt.Color(255, 255, 255));
